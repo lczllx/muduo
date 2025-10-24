@@ -1,0 +1,37 @@
+# 构建目录
+build/
+bin/
+lib/
+
+# 编译生成的文件
+*.o
+*.a
+*.so
+*.dylib
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+logfile/
+
+# 临时文件
+*.tmp
+*.temp
+
+# 备份文件
+*.bak
+*.backup
+
+# 测试文件
+test_output/
+performance_test/
