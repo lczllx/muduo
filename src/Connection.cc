@@ -15,7 +15,7 @@ Connection::Connection(EventLoop* loop, uint64_t cone_id, int sockfd)
 }
 
 Connection::~Connection() {
-    L_DEBUG << "release " << this;
+    L_DEBUG("release %p", this);
 }
 
 void Connection::HandleRead() {

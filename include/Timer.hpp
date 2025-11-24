@@ -33,7 +33,7 @@ class TimerTask
             _timer_cb();
         }
         }catch (...){
-        L_ERROR << "TimerTask callback threw exception";
+        L_ERROR("TimerTask callback threw exception");
         }
         if(_release_cb)_release_cb();
     }
@@ -68,7 +68,7 @@ class TimingWheel
         int timefd=timerfd_create(CLOCK_MONOTONIC,0);
         if(timefd<0)
         {
-            L_ERROR << "timerfd create failed";
+            L_ERROR("timerfd create failed");
             abort();
         }
         struct itimerspec itime;
@@ -86,7 +86,7 @@ class TimingWheel
         int ret=read(_timefd,&times,8);
         if(ret<0)
         {
-            L_ERROR << "read timerfd failed";
+            L_ERROR("read timerfd failed");
             abort();
         }
         return times;//返回从上一次read之后超时的次数
@@ -119,7 +119,7 @@ class TimingWheel
       // PtrTask pt=std::make_shared<TimerTask>(id, timeout, cb);
        if(delay == 0 || delay >= static_cast<uint32_t>(_capacity)) 
        {
-            L_ERROR << "Invalid timer delay: " << delay << " (max: " << (_capacity-1) << ")";
+            L_ERROR("Invalid timer delay: %u (max: %d)", delay, (_capacity-1));
             return;
        }
         PtrTask pt(new TimerTask(id, delay, cb));
@@ -127,7 +127,7 @@ class TimingWheel
         int pos=(delay+_tick)%_capacity;
         _wheel[pos].push_back(pt); 
         _timers[id]=WeakTask(pt);    
-        L_DEBUG << "Added timer " << id << " to slot " << pos << " (delay " << delay << ")";
+        L_DEBUG("Added timer %lu to slot %d (delay %u)", id, pos, delay);
         
     }
     void TimerRefleshInLoop(uint64_t id)

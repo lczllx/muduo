@@ -5,7 +5,7 @@
 class NetWork {
 public:
     NetWork() {
-        L_DEBUG << "SIGPIPE INIT";
+        L_DEBUG("SIGPIPE INIT");
         signal(SIGPIPE, SIG_IGN);
     }
 };

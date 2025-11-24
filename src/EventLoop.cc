@@ -38,7 +38,7 @@ void EventLoop::RunAllTask() {
 int EventLoop::CreateEventfd() {
     int efd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if(efd < 0) {
-        L_ERROR << "create eventfd failed";
+        L_ERROR("create eventfd failed");
         abort();
     }
     return efd;
@@ -49,7 +49,7 @@ void EventLoop::ReadEventfd() {
     int ret = read(_eventfd, &res, sizeof(res));
     if(ret < 0) {
         if(errno == EINTR || errno == EAGAIN) return;
-        L_ERROR << "read eventfd failed";
+        L_ERROR("read eventfd failed");
         abort();
     }
 }
@@ -59,7 +59,7 @@ void EventLoop::WeakupEventfd() {
     int ret = write(_eventfd, &val, sizeof(val));
     if(ret < 0) {
         if(errno == EINTR) return;
-        L_ERROR << "write eventfd failed";
+        L_ERROR("write eventfd failed");
         abort();
     }
 }

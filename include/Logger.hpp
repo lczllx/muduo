@@ -7,6 +7,7 @@
 #include <chrono>
 #include <iomanip>
 #include <thread>
+#include <cstdio>
 
 namespace muduo {
 
@@ -21,7 +22,7 @@ enum LogLevel {
 class Logger {
 private:
     LogLevel level_;
-    std::stringstream ss_;
+    std::string message_;
     
     static const char* LevelToString(LogLevel level) {
         switch(level) {
@@ -50,11 +51,11 @@ public:
     Logger(LogLevel level) : level_(level) {}
     
     ~Logger() {
-        if (level_ >= INFO) {  // 只输出 INFO 及以上级别的日志
+        if (level_ >= INFO || level_ == DEBUG) {  // 输出所有级别的日志
             std::cout << "[" << GetCurrentTime() << "]"
                       << "[" << std::this_thread::get_id() << "]"
                       << "[" << LevelToString(level_) << "] "
-                      << ss_.str() << std::endl;
+                      << message_ << std::endl;
         }
         
         if (level_ == FATAL) {
@@ -62,16 +63,28 @@ public:
         }
     }
     
-    template<typename T>
-    Logger& operator<<(const T& msg) {
-        ss_ << msg;
-        return *this;
+    // 支持函数调用语法，类似 printf（可变参数版本）
+    template<typename... Args>
+    void operator()(const char* format, Args... args) {
+        char buffer[4096];
+        snprintf(buffer, sizeof(buffer), format, args...);
+        message_ = buffer;
+    }
+    
+    // 支持无参数的调用（C字符串）
+    void operator()(const char* msg) {
+        message_ = msg;
+    }
+    
+    // 支持无参数的调用（std::string）
+    void operator()(const std::string& msg) {
+        message_ = msg;
     }
 };
 
 }  // namespace muduo
 
-// 日志宏
+// 日志宏 - 返回临时对象，支持函数调用语法
 #define L_DEBUG muduo::Logger(muduo::DEBUG)
 #define L_INFO  muduo::Logger(muduo::INFO)
 #define L_WARN  muduo::Logger(muduo::WARN)

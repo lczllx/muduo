@@ -14,5 +14,5 @@
 #include "LoopThread.hpp"
 #include "LoopThreadPool.hpp"
 #include "CallbackTypes.hpp"
-#include "Logger.h"
+#include "Logger.hpp"
 #endif

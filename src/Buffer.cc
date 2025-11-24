@@ -25,7 +25,7 @@ void Buffer::EnsureWritableBytes(uint64_t len) {
         _read_idx = 0;
         _write_idx = rez;
     } else {
-        L_DEBUG << "RESIZE " << (_write_idx + len);
+        L_DEBUG("RESIZE %lu", (_write_idx + len));
         _buffer.resize(_write_idx + len);
     }
 }

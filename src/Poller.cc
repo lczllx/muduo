@@ -8,7 +8,7 @@
 Poller::Poller() {
     _epfd = epoll_create(MAX_EPOLLEVENTS);
     if(_epfd < 0) {
-        L_ERROR << "epoll create failed";
+        L_ERROR("epoll create failed");
         abort();
     }
 }
@@ -20,7 +20,7 @@ void Poller::Update(Channel *channel, int op) {
     ev.events = channel->Events();
     int ret = epoll_ctl(_epfd, op, fd, &ev);
     if(ret < 0) {
-        L_ERROR << "epollCTL failed op=" << op << " fd=" << fd << " errno=" << errno << "(" << strerror(errno) << ")";
+        L_ERROR("epollCTL failed op=%d fd=%d errno=%d (%s)", op, fd, errno, strerror(errno));
     }
 }
 
@@ -66,10 +66,10 @@ void Poller::Poll(std::vector<Channel*>*active)
         //EINTR 阻塞被信号打断了
         if(errno/*---用的nfds,感觉有影响*/==EINTR)
         {
-                L_DEBUG << "epoll_wait interrupted by signal";
+                L_DEBUG("epoll_wait interrupted by signal");
             return;
         }
-        L_ERROR << "Epollwait ERROR:" << strerror(errno);
+        L_ERROR("Epollwait ERROR: %s", strerror(errno));
         abort();
     }
     for(int i=0;i<nfds;i++)

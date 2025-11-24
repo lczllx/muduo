@@ -49,11 +49,11 @@ int main() {
     
     server.SetMessageCallBack([](const PtrConnection& conn, Buffer* buf) {
         std::string msg = buf->GetLineAndPop();
-        L_INFO << "Received: " << msg;
+        L_INFO("Received: %s", msg.c_str());
         conn->Send("Echo: " + msg);
     });
     
-    L_INFO << "Echo server starting on port 8889...";
+    L_INFO("Echo server starting on port 8889...");
     server.Start();
     return 0;
 }

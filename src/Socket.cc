@@ -9,7 +9,7 @@ Socket::~Socket() { Close(); }
 bool Socket::Create() {
     _sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(_sockfd < 0) {
-        L_ERROR << "create socket failed";
+        L_ERROR("create socket failed");
         return false;
     }
     return true;
@@ -23,7 +23,7 @@ bool Socket::Bind(const std::string &ip, uint16_t port) {
     socklen_t len = sizeof(struct sockaddr_in);
     int ret = bind(_sockfd, (struct sockaddr*)&addr, len);
     if(ret < 0) {
-        L_ERROR << "socket bind failed";
+        L_ERROR("socket bind failed");
         return false;
     }
     return true;
@@ -36,7 +36,7 @@ bool Socket::Listen(int backlog)
     int ret=listen(_sockfd,backlog);
     if(ret<0)
     {
-        L_ERROR << "socket listen failed";
+        L_ERROR("socket listen failed");
         return false;
     }
     return true;
@@ -53,7 +53,7 @@ bool Socket::Connect(const std::string &ip,uint16_t port)
     int ret=connect(_sockfd,(struct sockaddr*)&addr,len);
     if(ret<0)
     {
-        L_ERROR << "socket connect failed";
+        L_ERROR("socket connect failed");
         return false;
     }
     return true;
@@ -65,7 +65,7 @@ int Socket::Accept()//可以使用 sockaddr_storage，避免 IPv4/IPv6 不兼容
     int newfd=accept(_sockfd,NULL,NULL);
     if(newfd<0)
     {
-        L_ERROR << "socket Accept failed";
+        L_ERROR("socket Accept failed");
         return -1;
     }
     return newfd;
@@ -82,7 +82,7 @@ ssize_t Socket::Recv(void *buf,size_t len,int flag)
         {
             return 0;
         }
-        L_ERROR << "socket Recv failed";
+        L_ERROR("socket Recv failed");
         return -1;
     }
     return ret;//实际接收的数据长度
@@ -101,7 +101,7 @@ ssize_t Socket::Send(const void *buf,size_t len,int flag)
         {
             return 0;
         }
-        L_ERROR << "socket Send failed";
+        L_ERROR("socket Send failed");
         return -1;
     }
     return ret;//实际发送的数据长度
@@ -144,10 +144,10 @@ void Socket::NoBlock()// 设置套接字为非阻塞模式
 {
     int flag = fcntl(_sockfd, F_GETFL, 0);
     if (flag == -1) {
-        L_ERROR << "fcntl F_GETFL failed: " << strerror(errno);
+        L_ERROR("fcntl F_GETFL failed: %s", strerror(errno));
         return;
     }
     if (fcntl(_sockfd, F_SETFL, flag | O_NONBLOCK) == -1) {
-        L_ERROR << "fcntl F_SETFL failed: " << strerror(errno);
+        L_ERROR("fcntl F_SETFL failed: %s", strerror(errno));
     }
 }

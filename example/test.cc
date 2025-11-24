@@ -7,11 +7,11 @@ class EchoServer
     TcpServer _server;
     void OnConnected(const PtrConnection&conne)
     {
-        L_DEBUG << "new connected " << conne.get();
+        L_DEBUG("new connected %p", conne.get());
     }
     void OnClosed(const PtrConnection&conne)
     {
-        L_DEBUG << "close connected " << conne.get();
+        L_DEBUG("close connected %p", conne.get());
     }
     void OnMessage(const PtrConnection&conne,Buffer *buf)
     {
