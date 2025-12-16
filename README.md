@@ -1,11 +1,11 @@
 # LCZMuduo - 高性能 C++ 网络库
 
-作者：lczllx
-邮箱：2181719471@qq.com
-GitHub: [lczllx](https://github.com/lczllx)
-开发环境：Ubuntu VS Code
-编译器：g++
-编程语言：C++
+**作者**：lczllx  
+**邮箱**：2181719471@qq.com  
+**GitHub**: [lczllx](https://github.com/lczllx)  
+**开发环境**：Ubuntu VS Code  
+**编译器**：g++  
+**编程语言**：C++
 
 ## 项目编译
 
@@ -664,11 +664,16 @@ void Connection::ReleaseInLoop()
 ## 总结
 
 整个muduo的大概流程：
-1.创建TcpServer时自动创建base_loop，作为主reactor，同时创建Acceptor和LoopThreadPool
-2.设置从属线程数量，如果设置的线程数量为0，那主reactor不仅负责接收新连接还负责处理I/O事件，设置TcpServer的各种事件回调
-3.调用Start()时，先创建从属线程池，然后设置Acceptor的新连接回调，接着Acceptor.listen()将监听套接字注册到主reactor的Poller，最后启动主reactor的事件循环
-4.主reactor在事件循环中等待新连接到来，当监听套接字有可读事件时，Acceptor的Channel触发HandleRead回调
-5.当新连接到来时，Acceptor调用accept()获取新连接的fd，然后调用TcpServer::NewConnection()创建Connection对象，在线程池获取一个从属reactor绑定，设置Connection的各种回调，调用Established()启动读事件监控，该连接的所有操作都在绑定的reactor里面进行
+
+1. 创建TcpServer时自动创建base_loop，作为主reactor，同时创建Acceptor和LoopThreadPool
+
+2. 设置从属线程数量，如果设置的线程数量为0，那主reactor不仅负责接收新连接还负责处理I/O事件，设置TcpServer的各种事件回调
+
+3. 调用Start()时，先创建从属线程池，然后设置Acceptor的新连接回调，接着Acceptor.listen()将监听套接字注册到主reactor的Poller，最后启动主reactor的事件循环
+
+4. 主reactor在事件循环中等待新连接到来，当监听套接字有可读事件时，Acceptor的Channel触发HandleRead回调
+
+5. 当新连接到来时，Acceptor调用accept()获取新连接的fd，然后调用TcpServer::NewConnection()创建Connection对象，在线程池获取一个从属reactor绑定，设置Connection的各种回调，调用Established()启动读事件监控，该连接的所有操作都在绑定的reactor里面进行
 
 ## 🙏 致谢
 
