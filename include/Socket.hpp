@@ -10,8 +10,8 @@
 #include <sys/socket.h>
 #include "Logger.hpp"
 
-#define MAX_LISTEN 1024
-
+#define MAX_LISTEN 1024//最大监听连接数
+/*封装套接字的操作，简化对套接字的操作*/
 class Socket {
 private:
     int _sockfd;
@@ -24,19 +24,21 @@ public:
     int Fd() { return _sockfd; }
     void Close() { if(_sockfd != -1) { close(_sockfd); _sockfd = -1; } }
     
-    bool Create();
-    bool Bind(const std::string &ip, uint16_t port);
-    bool Listen(int backlog = MAX_LISTEN);
-    bool Connect(const std::string &ip, uint16_t port);
-    int Accept();
-    ssize_t Recv(void *buf, size_t len, int flag = 0);
-    ssize_t NonBlockRecv(void *buf, size_t len);
-    ssize_t Send(const void *buf, size_t len, int flag = 0);
-    ssize_t NonBlockSend(const void *buf, size_t len);
+    bool Create();//创建套接字
+    bool Bind(const std::string &ip, uint16_t port);//绑定地址信息
+    bool Listen(int backlog = MAX_LISTEN);//开始监听
+    bool Connect(const std::string &ip, uint16_t port);//向服务器发起连接
+    int Accept();//获取新连接 返回描述符
+    ssize_t Recv(void *buf, size_t len, int flag = 0);//接收数据
+    ssize_t NonBlockRecv(void *buf, size_t len);//非阻塞接收数据
+    ssize_t Send(const void *buf, size_t len, int flag = 0);//发送数据
+    ssize_t NonBlockSend(const void *buf, size_t len);//非阻塞发送
+    //创建监听连接
     bool CreateServer(uint16_t port, const std::string &ip = "0.0.0.0", bool block_flag = false);
+    //创建客户端连接
     bool CreateClient(uint16_t port, const std::string &ip);
-    void ReuseAdderess();
-    void NoBlock();
+    void ReuseAdderess();//开启地址端口重用 防止缓冲区没有数据时阻塞
+    void NoBlock();//设置套接字为非阻塞
 };
 
 #endif

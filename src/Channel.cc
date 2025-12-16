@@ -48,15 +48,22 @@ void Channel::HandleEvent() {
         return;
     }
     // 对端关闭连接（或者半关闭）且没有数据可读，通常表示连接已经关闭
-    // 注意：EPOLLRDHUP 需要显式在 epoll 事件中注册，且不是所有系统都支持
+    // EPOLLRDHUP 需要显式在 epoll 事件中注册，且不是所有系统都支持
     if (_revents & EPOLLRDHUP)
     {
+        if ((_revents & EPOLLIN) == 0) {  // 如果之前没有EPOLLIN
+            if (_read_cb) _read_cb();    // 尝试最后一次读取
+        }
         if (_close_cb) _close_cb();
         return;
     }
     // 挂起事件，表示连接已经挂起，无法再进行读写
     if (_revents & EPOLLHUP)
     {
+        // 在完全关闭前，尝试最后读取一次数据
+        if ((_revents & EPOLLIN) == 0) {
+            if (_read_cb) _read_cb();
+        }
         if (_close_cb) _close_cb();
         return;
     }

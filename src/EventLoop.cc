@@ -3,12 +3,13 @@
 #include <cstring>
 #include <cerrno>
 
+
 EventLoop::EventLoop() : 
     _thread_id(std::this_thread::get_id()),
     _eventfd(CreateEventfd()),
     _event_channel(new Channel(this, _eventfd)),
     _timerwheel(this) {
-
+    //添加可读事件回调 启动eventfd的事件监控
     _event_channel->SetReadCallback(std::bind(&EventLoop::ReadEventfd, this));
     _event_channel->EnableRead();
 }
@@ -18,9 +19,9 @@ void EventLoop::Start() {
         std::vector<Channel*> actives;
         _poller.Poll(&actives);
         for(auto &e : actives) {
-            e->HandleEvent();
+            e->HandleEvent();//处理io
         }
-        RunAllTask();
+        RunAllTask();//执行任务池任务
     }
 }
 
@@ -31,11 +32,12 @@ void EventLoop::RunAllTask() {
         _task.swap(tmp);
     }
     for(auto &task : tmp) {
-        task();
+        task();//执行任务
     }
 }
 
 int EventLoop::CreateEventfd() {
+    //EFD_CLOEXEC禁止进程复制 EFD_NONBLOCK启动非阻塞
     int efd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if(efd < 0) {
         L_ERROR("create eventfd failed");
@@ -56,7 +58,7 @@ void EventLoop::ReadEventfd() {
 
 void EventLoop::WeakupEventfd() {
     uint64_t val = 1;
-    int ret = write(_eventfd, &val, sizeof(val));
+    int ret = write(_eventfd, &val, sizeof(val));//写入触发可读事件
     if(ret < 0) {
         if(errno == EINTR) return;
         L_ERROR("write eventfd failed");
@@ -66,7 +68,7 @@ void EventLoop::WeakupEventfd() {
 
 void EventLoop::RunInLoop(const Tasks& t) {
     if(IsInLoop()) return t();
-    return TasksInLoop(t);
+    return TasksInLoop(t);//压入任务池
 }
 
 void EventLoop::TasksInLoop(const Tasks& t) {
@@ -74,7 +76,7 @@ void EventLoop::TasksInLoop(const Tasks& t) {
         std::unique_lock<std::mutex> _lock(_mutex);
         _task.push_back(t);
     }
-    WeakupEventfd();
+    WeakupEventfd();//唤醒有可能因为没有事件就绪而造成的epoll阻塞
 }
 
 bool EventLoop::IsInLoop() {

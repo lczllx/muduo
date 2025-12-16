@@ -6,14 +6,16 @@
 #include <mutex>
 #include <condition_variable>
 
+//eventloop和线程整合的模块
 class LoopThread {
 private:
     std::mutex _mutex;
-    std::condition_variable _cond;
-    EventLoop* _loop;
-    std::thread _thread;
+    std::condition_variable _cond;//条件变量 结合互斥锁实现loop获取同步关系
 
-    void ThreadEntry();
+    EventLoop* _loop;//在线程内实例化eventloop指针
+    std::thread _thread;//eventloop对应线程
+
+    void ThreadEntry();//实例化eventloop对象并启动eventloop
 
 public:
     LoopThread();

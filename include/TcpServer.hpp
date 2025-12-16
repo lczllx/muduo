@@ -7,39 +7,46 @@
 #include "EventLoop.hpp"
 #include <unordered_map>
 
+/*整合所有模块，提供给使用者搭建服务器*/
 class TcpServer {
 private:
-    uint64_t _next_id;
-    int _port;
-    int _timeout;
-    bool _enable_inactive_release;
-    EventLoop _base_loop;
-    Acceptor _acceptor;
-    LoopThreadPool _pool;
-    std::unordered_map<uint64_t, PtrConnection> _connections;
+    uint64_t _next_id;//连接id -目前是自增，可以做其他实现
+    int _port;//服务器监听的端口
+    int _timeout;//超时时间
+    bool _enable_inactive_release;//是否启动非活跃连接销毁
+    EventLoop _base_loop;//主reactor
+    Acceptor _acceptor;//监听套接字的管理对象
+    LoopThreadPool _pool;//从属线程池
+    std::unordered_map<uint64_t, PtrConnection> _connections;//保存管理所有的连接对应的指针
 
+    //使用者设置给connection模块的回调
     ConnectedCallBack _connected_cb;
     ClosedCallBack _closed_cb;
     MessageCallBack _message_cb;
     AnyEventCallBack _event_cb;
     ClosedCallBack _server_closed_cb;
 
-    void RemoveConnection(const PtrConnection& conne);
+    void RemoveConnection(const PtrConnection& conne);//移除连接信息
+    void NewConnection(int fd);//为新连接构造一个connection进行管理
+
+    //考虑线程安全 将任务压入任务池
     void RemoveConnectionInLoop(const PtrConnection& conne);
-    void NewConnection(int fd);
     void RunAfterInLoop(const std::function<void()>& task, int delay);
 
 public:
     TcpServer(int port);
-    void SetThreadCnt(int cnt);
+    void SetThreadCnt(int cnt);//设置线程池数量
+
+    //设置回调
     void SetConnectedCallBack(const ConnectedCallBack& connected_cb);
     void SetClosedCallBack(const ClosedCallBack& closed_cb);
     void SetMessageCallBack(const MessageCallBack& message_cb);
     void SetAnyEventCallBack(const AnyEventCallBack& event_cb);
     void SetServerClosedCallBack(const ClosedCallBack& cb);
-    void EnableInactiveRelease(int timeout);
-    void RunAfter(const std::function<void()>& task, int delay);
-    void Start();
+
+    void EnableInactiveRelease(int timeout);//启动非活跃连接销毁
+    void RunAfter(const std::function<void()>& task, int delay);//delay秒过后执行任务一个task
+    void Start();//启动
 };
 
 #endif

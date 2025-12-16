@@ -36,3 +36,7 @@ logfile/
 test_output/
 performance_test/
 net/http/wwwroot/
+
+# 文档和示例目录
+docs/
+net/notebook_api/

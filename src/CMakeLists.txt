@@ -6,6 +6,7 @@ set(SOURCES
     Channel.cc
     Connection.cc
     EventLoop.cc
+    Logger.cc
     LoopThread.cc
     LoopThreadPool.cc
     Poller.cc
@@ -20,3 +21,9 @@ add_library(lczmuduo STATIC ${SOURCES})
 
 # 设置库的链接库
 target_link_libraries(lczmuduo pthread)
+
+# 安装静态库
+install(TARGETS lczmuduo
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+)
