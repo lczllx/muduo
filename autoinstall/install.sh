@@ -12,6 +12,20 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 自动检测项目根目录（通过查找CMakeLists.txt）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# 验证项目根目录（检查是否存在CMakeLists.txt）
+if [ ! -f "$PROJECT_ROOT/CMakeLists.txt" ]; then
+    echo -e "${RED}错误: 未找到项目根目录（CMakeLists.txt）${NC}"
+    echo "当前目录: $PROJECT_ROOT"
+    exit 1
+fi
+
+# 切换到项目根目录
+cd "$PROJECT_ROOT"
+
 # 获取安装路径
 INSTALL_PREFIX="${1:-/usr/local}"
 
