@@ -34,8 +34,8 @@ void DelFile(const HttpRequest &req, HttpResponse *rsp)
 }
 int main()
 {
-    HttpServer server(8889);
-    server.SetThreadCnt(2);
+    HttpServer server(8889, 300);  // 300 秒超时，便于压测
+    server.SetThreadCnt(4);         // 10万连接建议 4+ 线程
     server.SetBasedir(WWWROOT);
     server.Get("/hello", Hello);
     server.Post("/login", Login);

@@ -16,14 +16,16 @@ enum LogLevel {
 
 class Logger {
 private:
-    LogLevel _level;//日志级别
-    std::string _message;//日志消息
+    LogLevel _level;
+    std::string _message;
+    const char* _file;
+    int _line;
     
     static const char* LevelToString(LogLevel level);//将日志级别转换为字符串
     static std::string GetCurrentTime();//获取当前时间
 
 public:
-    Logger(LogLevel level);
+    Logger(LogLevel level, const char* file, int line);
     ~Logger();
     
     // 支持函数调用语法
@@ -31,7 +33,7 @@ public:
     void operator()(const char* format, Args... args) {
         char buffer[4096];
         snprintf(buffer, sizeof(buffer), format, args...);
-        message_ = buffer;
+        _message = buffer;
     }
     
     // 支持无参数的调用
@@ -41,11 +43,11 @@ public:
 
 }  
 
-// 日志宏 - 返回临时对象，支持函数调用语法
-#define L_DEBUG muduo::Logger(muduo::DEBUG)
-#define L_INFO  muduo::Logger(muduo::INFO)
-#define L_WARN  muduo::Logger(muduo::WARN)
-#define L_ERROR muduo::Logger(muduo::ERROR)
-#define L_FATAL muduo::Logger(muduo::FATAL)
+// 日志宏 - 带文件名和行号
+#define L_DEBUG muduo::Logger(muduo::DEBUG, __FILE__, __LINE__)
+#define L_INFO  muduo::Logger(muduo::INFO,  __FILE__, __LINE__)
+#define L_WARN  muduo::Logger(muduo::WARN,  __FILE__, __LINE__)
+#define L_ERROR muduo::Logger(muduo::ERROR, __FILE__, __LINE__)
+#define L_FATAL muduo::Logger(muduo::FATAL, __FILE__, __LINE__)
 
 #endif  

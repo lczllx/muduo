@@ -40,3 +40,9 @@ net/http/wwwroot/
 # 文档和示例目录
 docs/
 net/notebook_api/
+
+# 压测脚本与说明（不提交）
+CONCURRENT_TEST.md
+SESSION_SUMMARY.md
+run_100k.sh
+

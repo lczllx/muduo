@@ -10,7 +10,7 @@
 #include <sys/socket.h>
 #include "Logger.hpp"
 
-#define MAX_LISTEN 1024//最大监听连接数
+#define MAX_LISTEN 65535  // 最大监听队列，支持高并发
 /*封装套接字的操作，简化对套接字的操作*/
 class Socket {
 private:

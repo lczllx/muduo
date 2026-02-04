@@ -168,7 +168,7 @@ private:
     }
 
 public:
-    TimingWheel(EventLoop *loop) : _tick(0), _capacity(60), _wheel(_capacity), _loop(loop),
+    TimingWheel(EventLoop *loop) : _tick(0), _capacity(360), _wheel(_capacity), _loop(loop),
                                    _timefd(CreateTimerfd()), _timer_channel(new Channel(_loop, _timefd))
     {
         _timer_channel->SetReadCallback(std::bind(&TimingWheel::OnTime, this));

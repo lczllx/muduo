@@ -1,6 +1,7 @@
 #include "../include/TcpServer.hpp"
 #include "../include/Logger.hpp"
 #include <iostream>
+#include <sys/resource.h>
 class EchoServer
 {
     private:
@@ -23,8 +24,8 @@ class EchoServer
     public:
 
     EchoServer(int port):_server(port){
-    _server.SetThreadCnt(2);
-    _server.EnableInactiveRelease(10);
+    _server.SetThreadCnt(4);           // 10万连接建议 4+ 线程
+    _server.EnableInactiveRelease(300);  // 压测时保持 5 分钟，避免中途断开
     _server.SetMessageCallBack(std::bind(&EchoServer::OnMessage,this,std::placeholders::_1,std::placeholders::_2));
     _server.SetConnectedCallBack(std::bind(&EchoServer::OnConnected,this,std::placeholders::_1));
     _server.SetClosedCallBack(std::bind(&EchoServer::OnClosed,this,std::placeholders::_1));
@@ -37,9 +38,12 @@ class EchoServer
 
 int main()
 {
+    struct rlimit rl;
+    if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
+        std::cout << "[Server] 当前进程 fd 上限: " << rl.rlim_cur
+                  << " (10万连接需 >= 110000，否则最多约6.5万)" << std::endl;
+    }
     EchoServer echo(8889);
     echo.Start();
-
-
     return 0;
 }

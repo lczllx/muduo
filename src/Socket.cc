@@ -81,16 +81,13 @@ ssize_t Socket::Recv(void *buf,size_t len,int flag)
     ssize_t ret=recv(_sockfd,buf,len,flag);
     if(ret<=0)
     {
-        //EAGAIN 表示当前socket的接收缓冲区没有数据，这个错误在非阻塞情况下才会发生
-        //EINTR 表示当前socket的阻塞等待被信号打断了
-        if(errno==EAGAIN||errno==EINTR)
-        {
-            return 0;
-        }
-        L_ERROR("socket Recv failed");
+        if(ret==0) return -1;  // 对端正常关闭，不打印错误
+        // ret<0: EAGAIN/EINTR 为可忽略，其他为真错误
+        if(errno==EAGAIN||errno==EINTR) return 0;
+        L_ERROR("socket Recv failed errno=%d (%s)", errno, strerror(errno));
         return -1;
     }
-    return ret;//实际接收的数据长度
+    return ret;
 }
 
 ssize_t Socket::NonBlockRecv(void *buf,size_t len)

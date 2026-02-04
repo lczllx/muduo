@@ -31,13 +31,15 @@ std::string Logger::GetCurrentTime() {
     return time_ss.str();
 }
 
-Logger::Logger(LogLevel level) : _level(level) {}
+Logger::Logger(LogLevel level, const char* file, int line)
+    : _level(level), _file(file), _line(line) {}
 
 Logger::~Logger() {
-    if (_level == ERROR || _level == FATAL) {  // 输出错误及以上级别的日志
+    if (_level == ERROR || _level == FATAL) {
         std::cout << "[" << GetCurrentTime() << "]"
                   << "[" << std::this_thread::get_id() << "]"
                   << "[" << LevelToString(_level) << "] "
+                  << _file << ":" << _line << " "
                   << _message << std::endl;
     }
     

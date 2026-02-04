@@ -6,7 +6,7 @@
 #include <sys/epoll.h>
 #include "Logger.hpp"
 
-#define MAX_EPOLLEVENTS 1024
+#define MAX_EPOLLEVENTS 8192  // 单次 epoll_wait 最多返回事件数，10万连接需增大
 
 /*对任意描述符进行io事件监控-封装epoll*/
 class Channel;

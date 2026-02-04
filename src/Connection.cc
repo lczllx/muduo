@@ -196,7 +196,9 @@ void Connection::Shutdown()
 
 void Connection::Release()
 {
-    _loop->RunInLoop(std::bind(&Connection::ReleaseInLoop, this));
+    // 必须始终入队，不能同步执行：若在 Channel 回调中调用，同步执行会立即销毁
+    // Connection，而 HandleEvent 尚未返回，后续还会调用 event_cb，导致 use-after-free
+    _loop->TasksInLoop(std::bind(&Connection::ReleaseInLoop, this));
 }
 
 //协议切换，必须在eventloop线程内立即执行
