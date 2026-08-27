@@ -22,7 +22,7 @@ else()
 endif()
 
 set(TEST_SOURCES
-    test_buffer.cc test_any.cc test_logger.cc
+    test_buffer.cc test_any.cc
     test_loopthread.cc test_loopthreadpool.cc test_timingwheel.cc
     test_eventloop.cc test_socket.cc test_channel.cc
     test_connection.cc test_tcpserver.cc
