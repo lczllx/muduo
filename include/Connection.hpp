@@ -6,6 +6,7 @@
 #include "Socket.hpp"
 #include "Channel.hpp"
 #include "CallbackTypes.hpp"
+#include "InetAddress.hpp"
 #include <memory>
 
 /*对通信连接进行管理的模块，对socket，buffer，channel的整合
@@ -21,6 +22,7 @@ private:
     EventLoop *_loop;              // 连接关联的eventloop
     ConneStatus _status;           // 连接状态
     Socket _socket;
+    InetAddress _peer_addr;        // 对端地址（getpeername 获取）
     Channel _conne_channel;
     Buffer _in_buffer;  // 输入缓冲区
     Buffer _out_buffer; // 输出缓冲区
@@ -54,6 +56,7 @@ public:
     int Fd() const { return _sockfd; }                      // 获取管理的文件描述符
     int Id() const { return _conne_id; }                    // 获取链接id
     bool Connected() const { return _status == CONNECTED; } // 判断连接是否处于CONNECTED
+    const InetAddress &peerAddress() const { return _peer_addr; } // 获取对端地址
 
     void SetContext(const Any &context) { _context = context; } // 设置上下文
     Any *GetContext() { return &_context; }                     // 获取上下文信息

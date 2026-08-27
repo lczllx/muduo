@@ -1,12 +1,19 @@
 #include "../include/Connection.hpp"
 #include "../include/EventLoop.hpp"
-#include "../include/log_system/lcz_log.h"
+#include "log_system/lcz_log.h"
 #include <cstring>
 #include <cerrno>
 
 Connection::Connection(EventLoop *loop, uint64_t cone_id, int sockfd)
     : _conne_id(cone_id), _sockfd(sockfd), _enable_inactive_release(false), _loop(loop), _status(CONNECTING), _socket(sockfd), _conne_channel(loop, sockfd)
 {
+    // 记录对端地址：服务端 accept 后 / 客户端 connect 后均可通过 getpeername 拿到
+    struct sockaddr_in peer;
+    socklen_t len = sizeof(peer);
+    if (::getpeername(_sockfd, reinterpret_cast<struct sockaddr *>(&peer), &len) == 0)
+    {
+        _peer_addr = InetAddress(peer);
+    }
 
     _conne_channel.SetCloseCallback(std::bind(&Connection::HandleClose, this));
     _conne_channel.SetReadCallback(std::bind(&Connection::HandleRead, this));
@@ -17,7 +24,7 @@ Connection::Connection(EventLoop *loop, uint64_t cone_id, int sockfd)
 
 Connection::~Connection()
 {
-    LCZ_DEBUG("release %p", this);
+    DLMUDUO_DEBUG("release %p", this);
 }
 
 void Connection::HandleRead()

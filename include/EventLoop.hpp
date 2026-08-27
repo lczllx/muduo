@@ -12,7 +12,7 @@
 #include <cassert>
 #include <atomic>
 
-#include "Logger.hpp"
+#include "log_system/lcz_log.h"
 #include "Poller.hpp"
 #include "Timer.hpp"
 /*One Loop Per Thread 模型核心：每个线程绑定一个 EventLoop
@@ -34,7 +34,7 @@ private:
     using Tasks = std::function<void()>;
     std::vector<Tasks> _task;
     std::mutex _mutex;
-    TimingWheel _timerwheel;
+    TimerQueue _timerqueue;
 
     void RunAllTask();
     static int CreateEventfd();
@@ -51,6 +51,13 @@ public:
     bool IsInLoop();
     void UpdateEvent(Channel *channel);
     void RemoveEvent(Channel *channel);
+
+    // 定时器（新版）：毫秒精度、任意延迟、自动分配 id
+    TimerId runAfter(double seconds, const TaskFunc &cb);  // 一次性定时，返回句柄
+    TimerId runEvery(double seconds, const TaskFunc &cb);  // 周期定时，返回句柄
+    void cancel(TimerId id);                                // 取消定时器
+
+    // 定时器（旧版，兼容 Connection/TcpServer 的显式 id 用法）
     void TimerAdd(uint64_t id, uint32_t delay, const TaskFunc &cb);
     void TimerReflesh(uint64_t id);
     void TimerCancel(uint64_t id);

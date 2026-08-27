@@ -16,7 +16,7 @@
 #include <unistd.h> // for fileno, fsync
 #include <fcntl.h>
 
-namespace lcz
+namespace dlmuduo
 {
     //日志落地基类
     class LogSink
@@ -128,7 +128,7 @@ namespace lcz
         FileSink(const std::string &pathname)
         :_pathname(pathname)
         {
-            lcz::utility::File::createDirectory(utility::File::path(_pathname));
+            dlmuduo::utility::File::createDirectory(utility::File::path(_pathname));
             _ofs.open(_pathname,std::ios::binary | std::ios::app);
             assert(_ofs.is_open());
 
@@ -163,7 +163,7 @@ namespace lcz
         :_basename(basename),_max_size(max_size),_cur_size(0)
         {
             std::string pathname = craetefilename();
-            lcz::utility::File::createDirectory(utility::File::path(pathname));
+            dlmuduo::utility::File::createDirectory(utility::File::path(pathname));
             _ofs.open(pathname,std::ios::binary | std::ios::app);
             assert(_ofs.is_open());
 
@@ -176,7 +176,7 @@ namespace lcz
                 //重新创建一个新文件
                 _cur_size=0;
                 std::string pathname = craetefilename();
-                lcz::utility::File::createDirectory(utility::File::path(pathname));
+                dlmuduo::utility::File::createDirectory(utility::File::path(pathname));
                 _ofs.open(pathname,std::ios::binary | std::ios::app);
                 assert(_ofs.is_open());
                 _cur_size=len;
@@ -226,7 +226,7 @@ class RollbytimefileSink:public LogSink
     :_basename(basename),_roll_interval(roll_interval),_last_roll_time(0)
     {
         std::string pathname = craetefilename();
-        lcz::utility::File::createDirectory(utility::File::path(pathname));
+        dlmuduo::utility::File::createDirectory(utility::File::path(pathname));
         _ofs.open(pathname,std::ios::binary | std::ios::app);
         assert(_ofs.is_open());
         _last_roll_time = time(nullptr);
@@ -240,7 +240,7 @@ class RollbytimefileSink:public LogSink
             _ofs.close();//需要先关闭当前文件
             //重新创建一个新文件
             std::string pathname = craetefilename();
-            lcz::utility::File::createDirectory(utility::File::path(pathname));
+            dlmuduo::utility::File::createDirectory(utility::File::path(pathname));
             _ofs.open(pathname,std::ios::binary | std::ios::app);
             assert(_ofs.is_open());
             _last_roll_time = now;

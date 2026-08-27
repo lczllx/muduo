@@ -67,7 +67,7 @@ void DelFile(const HttpRequest &req, HttpResponse *rsp)
 }
 int main()
 {
-    lcz::LoggerManager::getInstance().rootLogger()->setLevel(lcz::LogLevel::value::WARN);
+    dlmuduo::LoggerManager::getInstance().rootLogger()->setLevel(dlmuduo::LogLevel::value::WARN);
     // 机器配置: 4c8g 用 8 线程; 2c2g 建议改为 2
     const int THREAD_CNT =4;
     HttpServer server(8889, 300);  // 300 秒超时，便于压测

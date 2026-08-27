@@ -7,7 +7,7 @@
 
 #include<iostream>
 
-namespace lcz
+namespace dlmuduo
 {
     class LogLevel
    {

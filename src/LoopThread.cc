@@ -1,13 +1,13 @@
 #include "../include/LoopThread.hpp"
-#include "../include/log_system/lcz_log.h"
+#include "log_system/lcz_log.h"
 
 LoopThread::LoopThread() : _loop(nullptr), _thread(std::thread(&LoopThread::ThreadEntry, this)) {}
 
 // 线程入口：栈上分配 EventLoop，Start() 阻塞直到 Quit() 被调用
 void LoopThread::ThreadEntry() {
-    LCZ_DEBUG("ThreadEntry() begin");
+    DLMUDUO_DEBUG("ThreadEntry() begin");
     EventLoop loop;
-    LCZ_DEBUG("ThreadEntry() EventLoop constructed, entering Start()");
+    DLMUDUO_DEBUG("ThreadEntry() EventLoop constructed, entering Start()");
     {
         std::unique_lock<std::mutex> lock(_mutex);
         _loop = &loop;

@@ -1,6 +1,6 @@
 #include "../include/EventLoop.hpp"
 #include "../include/Channel.hpp"
-#include "../include/log_system/lcz_log.h"
+#include "log_system/lcz_log.h"
 #include <cstring>
 #include <cerrno>
 
@@ -10,10 +10,10 @@ EventLoop::EventLoop() :
     _thread_id(std::this_thread::get_id()),
     _eventfd(CreateEventfd()),
     _event_channel(new Channel(this, _eventfd)),
-    _timerwheel(this) {
+    _timerqueue(this) {
     _event_channel->SetReadCallback(std::bind(&EventLoop::ReadEventfd, this));
     _event_channel->EnableRead();
-    LCZ_DEBUG("EventLoop constructed this=%p efd=%d", (void*)this, _eventfd);
+    DLMUDUO_DEBUG("EventLoop constructed this=%p efd=%d", (void*)this, _eventfd);
 }
 
 EventLoop::~EventLoop() {
@@ -25,7 +25,7 @@ EventLoop::~EventLoop() {
 }
 
 void EventLoop::Start() {
-    LCZ_DEBUG("EventLoop::Start() tid=%lu",
+    DLMUDUO_DEBUG("EventLoop::Start() tid=%lu",
               (unsigned long)std::hash<std::thread::id>()(std::this_thread::get_id()));
     while(!_quit) {
         std::vector<Channel*> actives;
@@ -62,7 +62,7 @@ int EventLoop::CreateEventfd() {
     //EFD_CLOEXEC禁止进程复制 EFD_NONBLOCK启动非阻塞
     int efd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if(efd < 0) {
-        LCZ_ERROR("create eventfd failed");
+        DLMUDUO_ERROR("create eventfd failed");
         abort();
     }
     return efd;
@@ -73,7 +73,7 @@ void EventLoop::ReadEventfd() {
     int ret = read(_eventfd, &res, sizeof(res));
     if(ret < 0) {
         if(errno == EINTR || errno == EAGAIN) return;
-        LCZ_ERROR("read eventfd failed");
+        DLMUDUO_ERROR("read eventfd failed");
         abort();
     }
 }
@@ -83,7 +83,7 @@ void EventLoop::WeakupEventfd() {
     int ret = write(_eventfd, &val, sizeof(val));//写入触发可读事件
     if(ret < 0) {
         if(errno == EINTR) return;
-        LCZ_ERROR("write eventfd failed");
+        DLMUDUO_ERROR("write eventfd failed");
         abort();
     }
 }
@@ -113,20 +113,32 @@ void EventLoop::RemoveEvent(Channel* channel) {
     _poller.RemoveEvent(channel);
 }
 
+TimerId EventLoop::runAfter(double seconds, const TaskFunc& cb) {
+    return _timerqueue.addTimer(cb, seconds);
+}
+
+TimerId EventLoop::runEvery(double seconds, const TaskFunc& cb) {
+    return _timerqueue.addRepeatTimer(cb, seconds);
+}
+
+void EventLoop::cancel(TimerId id) {
+    _timerqueue.cancel(id);
+}
+
 void EventLoop::TimerAdd(uint64_t id, uint32_t delay, const TaskFunc& cb) {
-    _timerwheel.TimerAdd(id, delay, cb);
+    _timerqueue.addTimerWithId(id, cb, static_cast<double>(delay));
 }
 
 void EventLoop::TimerReflesh(uint64_t id) {
-    _timerwheel.TimerReflesh(id);
+    _timerqueue.refresh(id);
 }
 
 void EventLoop::TimerCancel(uint64_t id) {
-    _timerwheel.TimerCancel(id);
+    _timerqueue.cancel(id);
 }
 
 bool EventLoop::HasTimer(uint64_t id) {
-    return _timerwheel.HasTimer(id);
+    return _timerqueue.hasTimer(id);
 }
 
 void EventLoop::AssertInLoop() {

@@ -1,5 +1,5 @@
 #include "../include/TcpServer.hpp"
-#include "../include/Logger.hpp"
+#include "log_system/lcz_log.h"
 
 TcpServer::TcpServer(int port)
     : _next_id(0), _port(port), _enable_inactive_release(false), _acceptor(&_base_loop, port), _pool(&_base_loop) {}
@@ -47,12 +47,12 @@ void TcpServer::RunAfter(const std::function<void()> &task, int delay)
 
 void TcpServer::Start()
 {
-    LCZ_DEBUG("TcpServer::Start() begin");
+    DLMUDUO_DEBUG("TcpServer::Start() begin");
     _pool.Create(); // 创建线程池的从属线程
-    LCZ_DEBUG("TcpServer::Start() pool created");
+    DLMUDUO_DEBUG("TcpServer::Start() pool created");
     _acceptor.SetAcceptorCallBack(std::bind(&TcpServer::NewConnection, this, std::placeholders::_1));//收到新连接的回调
     _acceptor.Listen(); // 将监听套接字挂到baseloop上面开始事件监控
-    LCZ_DEBUG("TcpServer::Start() acceptor listening, entering base loop");
+    DLMUDUO_DEBUG("TcpServer::Start() acceptor listening, entering base loop");
     _base_loop.Start();
 }
 

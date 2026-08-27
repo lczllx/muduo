@@ -6,10 +6,12 @@ set(SOURCES
     Channel.cc
     Connection.cc
     EventLoop.cc
+    InetAddress.cc
     LoopThread.cc
     LoopThreadPool.cc
     Poller.cc
     Socket.cc
+    TcpClient.cc
     TcpServer.cc
     Timer.cc
     muduo_server_init.cc
@@ -21,7 +23,7 @@ add_library(lczmuduo STATIC ${SOURCES})
 # 库的公开头文件目录（链接此库的目标自动获得 include 路径）
 target_include_directories(lczmuduo
     PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
         $<INSTALL_INTERFACE:include/lczmuduo>
 )
 

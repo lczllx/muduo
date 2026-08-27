@@ -1,6 +1,6 @@
 #include "../include/Acceptor.hpp"
 #include "../include/EventLoop.hpp"
-#include "../include/log_system/lcz_log.h"
+#include "log_system/lcz_log.h"
 
 Acceptor::Acceptor(EventLoop* loop, int port)
     : _socket(CreateServer(port)), _loop(loop), _acpt_channel(loop, _socket.Fd()) {
@@ -17,7 +17,7 @@ void Acceptor::HandleRead() {
 
 int Acceptor::CreateServer(int port) {
     if (!_socket.CreateServer(port)) {
-        LCZ_ERROR("CreateServer failed for port %d", port);
+        DLMUDUO_ERROR("CreateServer failed for port %d", port);
         abort();
     }
     return _socket.Fd();

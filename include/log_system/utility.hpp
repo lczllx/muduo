@@ -1,5 +1,5 @@
-#ifndef LCZ_UTILITY_H
-#define LCZ_UTILITY_H
+#ifndef DLMUDUO_UTILITY_H
+#define DLMUDUO_UTILITY_H
 /*实用工具类：
 1.获取系统时间
 2.获取文件大小
@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-namespace lcz
+namespace dlmuduo
 {
     namespace utility
     {

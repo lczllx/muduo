@@ -1,6 +1,6 @@
 #include "../include/Poller.hpp"
 #include "../include/Channel.hpp"
-#include "../include/log_system/lcz_log.h"
+#include "log_system/lcz_log.h"
 #include <cassert>
 #include <cstring>
 #include <cerrno>
@@ -11,10 +11,10 @@ Poller::Poller() : _evs(MAX_EPOLLEVENTS)
     _epfd = epoll_create(MAX_EPOLLEVENTS);
     if (_epfd < 0)
     {
-        LCZ_ERROR("epoll create failed");
+        DLMUDUO_ERROR("epoll create failed");
         abort();
     }
-    LCZ_DEBUG("Poller created epfd=%d", _epfd);
+    DLMUDUO_DEBUG("Poller created epfd=%d", _epfd);
 }
 
 void Poller::Update(Channel *channel, int op)
@@ -26,7 +26,7 @@ void Poller::Update(Channel *channel, int op)
     int ret = epoll_ctl(_epfd, op, fd, &ev);
     if (ret < 0)
     {
-        LCZ_ERROR("EpollCTL failed op=%d fd=%d errno=%d (%s)", op, fd, errno, strerror(errno));
+        DLMUDUO_ERROR("EpollCTL failed op=%d fd=%d errno=%d (%s)", op, fd, errno, strerror(errno));
     }
 }
 
@@ -69,15 +69,15 @@ void Poller::Poll(std::vector<Channel *> *active)
     {
         if (errno  == EINTR)
         {
-            LCZ_DEBUG("epoll_wait interrupted by signal");
+            DLMUDUO_DEBUG("epoll_wait interrupted by signal");
             return;
         }
-        LCZ_ERROR("Epollwait ERROR: %s", strerror(errno));
+        DLMUDUO_ERROR("Epollwait ERROR: %s", strerror(errno));
         abort();
     }
     for (int i = 0; i < nfds; i++)
     {
-        LCZ_DEBUG("Poller::Poll() epfd=%d fd=%d events=0x%x", _epfd, _evs[i].data.fd, _evs[i].events);
+        DLMUDUO_DEBUG("Poller::Poll() epfd=%d fd=%d events=0x%x", _epfd, _evs[i].data.fd, _evs[i].events);
         auto it = _channels.find(_evs[i].data.fd);
         if (it != _channels.end())
         {
@@ -87,7 +87,7 @@ void Poller::Poll(std::vector<Channel *> *active)
         }
         else
         {
-            LCZ_WARN("Epoll event for unknown fd=%d",_evs[i].data.fd); // 处理未知fd事件
+            DLMUDUO_WARN("Epoll event for unknown fd=%d",_evs[i].data.fd); // 处理未知fd事件
         }
     }
 }

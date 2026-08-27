@@ -2,204 +2,101 @@
 #define MUDUO_TIMER_H
 
 #include <memory>
+#include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <functional>
+#include <chrono>
 #include <sys/timerfd.h>
 #include <unistd.h>
 #include "log_system/lcz_log.h"
 #include "CallbackTypes.hpp"
 #include "Channel.hpp"
 
-/*定时任务模块*/
-class EventLoop;
-class Channel;
-class TimerTask
-{
-private:
-    uint64_t _timer_id;      // 定时器id
-    uint32_t _timeout;       // 延迟时间
-    bool _cancel;            // 为false时任务正常执行
-    TaskFunc _timer_cb;      // 析构时要调用的定时任务
-    ReleaseFunc _release_cb; // 用于删除TimingWheel中保存的定时器对象信息
-public:
-    TimerTask(uint64_t id, uint32_t delay, const TaskFunc &cb)
-        : _timer_id(id), _timeout(delay), _cancel(false), _timer_cb(cb) {}
-    ~TimerTask()
-    {
-        // if(_timer_cb && _cancel==false)_timer_cb();//忘记将_cancel==false加上，导致段错误
-        try
-        {
-            if (_cancel == false && _timer_cb)
-            {
-                _timer_cb();
-            }
-        }
-        catch (...)
-        {
-            LCZ_ERROR("TimerTask callback threw exception");
-        }
-        if (_release_cb)
-            _release_cb();
-    }
-    void SetRelease(const ReleaseFunc &cb) { _release_cb = cb; }
-    uint32_t DelayTime() { return _timeout; }
-    void Cancel() { _cancel = true; } // 添加取消接口
-};
-/*时间轮定时器：360 个槽，每槽 1 秒，O(1) 插入/删除
-  原理：timerfd 每秒触发一次 → OnTime() → RunTimerTask()
-  RunTimerTask() 清空当前槽 → shared_ptr 析构触发定时任务回调
-  索引：_timers 用 weak_ptr，不阻止 TimerTask 析构，_wheel 用 shared_ptr 持有所有权
+/*定时器队列：std::set 按到期时间排序 + 单个 timerfd 驱动
+  相比旧时间轮的优势：
+  1. 毫秒级精度（timerfd 纳秒精度，支持亚秒超时）
+  2. 任意延迟（不再受 360 槽 × 1 秒上限约束）
+  3. 自动分配定时器 id（runAfter/runEvery 返回 TimerId）
+  4. 支持周期任务（repeat）
   线程安全：所有公开接口通过 RunInLoop 路由到 EventLoop 线程*/
-class TimingWheel
+class EventLoop;
+class TimerQueue
 {
-private:
-    using PtrTask = std::shared_ptr<TimerTask>;
-    using WeakTask = std::weak_ptr<TimerTask>;
-    int _tick;     // 当前槽位索引，每 tick 前进 1，模 _capacity 回绕
-    int _capacity; // 时间轮槽数 = 360，最大延迟 359 秒
-    std::unordered_map<uint64_t, WeakTask> _timers; // id→weak_ptr 索引（须在 _wheel 之前声明，确保析构时 _wheel 先销毁，其 TimerTask::_release_cb 回调 RemoveTimer 时 _timers 仍存活）
-    std::vector<std::vector<PtrTask>> _wheel;       // 环形槽数组，每个槽存储 shared_ptr<TimerTask>
-
-    EventLoop *_loop;
-    int _timefd; // 定时器描述符 可读事件回调就是读取计数器，执行定时任务
-    std::unique_ptr<Channel> _timer_channel;
-private:
-    void RemoveTimer(uint64_t id)
-    {
-        auto it = _timers.find(id);
-        if (it == _timers.end())
-            return;
-        _timers.erase(it);
-    }
-
-    // timerfd 每秒触发一次可读事件，OnTime() 读取超时次数后补齐执行
-    static int CreateTimerfd()
-    {
-        int timefd = timerfd_create(CLOCK_MONOTONIC, 0);//创建timerfd
-        if (timefd < 0)
-        {
-            LCZ_ERROR("timerfd create failed");
-            abort();
-        }
-        struct itimerspec itime;
-        itime.it_value.tv_sec = 1;
-        itime.it_value.tv_nsec = 0; // 第一次超时时间为1s后
-        itime.it_interval.tv_sec = 1;
-        itime.it_interval.tv_nsec = 0; // 第一次超时后每次的超时时限
-        timerfd_settime(timefd, 0, &itime, NULL);
-        return timefd;
-    }
-
-    int ReadTimerfd()//触发可读调用
-    {
-        uint64_t times;
-        // 有可能因为其他描述符的事件处理花费时间比较长，任何在处理定时器描述符时，已经超时很多次了
-        int ret = read(_timefd, &times, 8);
-        if (ret < 0)
-        {
-            LCZ_ERROR("read timerfd failed");
-            abort();
-        }
-        return times; // 返回从上一次read之后超时的次数
-    }
-
-    // 清空当前槽 → shared_ptr 析构 → TimerTask::~TimerTask() 执行回调 → ReleaseFunc 从 _timers 移除 weak_ptr
-    // 依赖 RAII：槽是 shared_ptr 的唯一持有者，clear() 后引用计数归零
-    void RunTimerTask()
-    {
-        //版本1
-        // _tick=(_tick+1)%_capacity;
-        // //当前槽任务逐个手动取消触发析构
-        // for (auto& task : _wheel[_tick]) {
-        //         task->Cancel();  // 标记已执行
-        // }
-
-        // _wheel[_tick].clear();// 清除当前槽中所有任务
-        //-------------------
-        //版本2
-        auto &slot = _wheel[_tick];      // 获取当前槽位
-        slot.clear();                    // 清空槽位，触发所有Task析构（自动执行回调）
-        _tick = (_tick + 1) % _capacity; // 移动秒针
-    }
-
-    void OnTime()//时间到了
-    {
-        // 根据实际超时的次数，执⾏对应的超时任务
-        int times = ReadTimerfd();
-        for (int i = 0; i < times; i++)
-        {
-            RunTimerTask();
-        }
-    }
-
-    // 计算目标槽位 = (当前_tick + 延迟) % _capacity，将 TimerTask 挂入对应槽
-    void TimerAddInLoop(uint64_t id, uint32_t delay, const TaskFunc &cb)
-    {
-        // PtrTask pt=std::make_shared<TimerTask>(id, timeout, cb);
-        if (delay == 0 || delay >= static_cast<uint32_t>(_capacity))
-        {
-            LCZ_ERROR("Invalid timer delay: %u (max: %d)", delay, (_capacity - 1));
-            return;
-        }
-        PtrTask pt(new TimerTask(id, delay, cb));
-        pt->SetRelease(std::bind(&TimingWheel::RemoveTimer, this, id));
-        int pos = (delay + _tick) % _capacity;
-        _wheel[pos].push_back(pt);
-        _timers[id] = WeakTask(pt);
-        LCZ_DEBUG("Added timer %lu to slot %d (delay %u)", id, pos, delay);
-    }
-    
-    // refresh：重新插入到新的目标槽位，延长定时器生命周期
-    void TimerRefleshInLoop(uint64_t id)
-    {
-        auto it = _timers.find(id);
-        if (it == _timers.end())
-            return;
-        PtrTask pt = it->second.lock(); // 获取weak_ptr管理的对应的shared_ptr
-        if (!pt)
-        { // 定时任务已过期
-            _timers.erase(it);
-            return;
-        }
-        int delay = pt->DelayTime();
-        int pos = (delay + _tick) % _capacity;
-        _wheel[pos].push_back(pt);
-    }
-
-    void TimerCancelInLoop(uint64_t id)
-    {
-        auto it = _timers.find(id);
-        if (it == _timers.end())
-            return;
-        PtrTask pt = it->second.lock();
-        if (pt)
-            pt->Cancel();
-    }
-
 public:
-    TimingWheel(EventLoop *loop) : _tick(0), _capacity(360), _wheel(_capacity), _loop(loop),
-                                   _timefd(CreateTimerfd()), _timer_channel(new Channel(_loop, _timefd))
+    using TimerCallback = std::function<void()>;
+
+    TimerQueue(EventLoop *loop);
+    ~TimerQueue();
+
+    // 新增一次性定时器，自动分配 id，seconds 秒后触发
+    TimerId addTimer(const TimerCallback &cb, double seconds);
+    // 新增周期定时器，每 seconds 秒触发一次，直到 cancel
+    TimerId addRepeatTimer(const TimerCallback &cb, double seconds);
+    // 显式指定 id 的定时器（兼容旧 TimerAdd 语义）
+    void addTimerWithId(TimerId id, const TimerCallback &cb, double seconds);
+    // 取消定时器（no-op 若不存在）
+    void cancel(TimerId id);
+    // 刷新定时器：把到期时间重置为 now + delay（活跃度刷新用）
+    void refresh(TimerId id);
+    // 判断定时器是否存在
+    bool hasTimer(TimerId id);
+
+private:
+    struct Timer
     {
-        _timer_channel->SetReadCallback(std::bind(&TimingWheel::OnTime, this));
-        _timer_channel->EnableRead(); // 开启读事件监控
-    }
-    // 定时器有个_timers成员，定时器信息的操作可能会在多线程中进行，因此需要考虑线程安全问题
-    // 如果不加锁，就要把对定时器的操作放到同一个线程中执行
-    void TimerAdd(uint64_t id, uint32_t delay, const TaskFunc &cb);
-    // 刷新或延迟定时任务
-    void TimerReflesh(uint64_t id);
-    void TimerCancel(uint64_t id);
-    // 存在线程安全问题，只能在对应的EventLoop的线程内执行
-    bool HasTimer(uint64_t id)
-    {
-        auto it = _timers.find(id);
-        if (it == _timers.end())
+        TimerId id;
+        double delay;   // 到期延迟（秒），refresh 时复用
+        bool repeat;    // 是否周期任务
+        TimerCallback cb;
+        std::chrono::steady_clock::time_point expiration;
+
+        void run() const
         {
-            return false;
+            if (cb)
+                cb();
         }
-        return true;
-    }
+        void restart(std::chrono::steady_clock::time_point now)
+        {
+            expiration = now + std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(delay));
+        }
+    };
+    using TimerPtr = std::shared_ptr<Timer>;
+
+    // set 排序键：(到期时间, id)，保证同一到期时间下按 id 稳定排序
+    struct Entry
+    {
+        std::chrono::steady_clock::time_point expiration;
+        TimerId id;
+        bool operator<(const Entry &rhs) const
+        {
+            return expiration < rhs.expiration || (expiration == rhs.expiration && id < rhs.id);
+        }
+    };
+
+    void handleRead();  // timerfd 可读 → 触发到期任务
+    void readTimerfd();
+    static int createTimerfd();
+    void resetTimerfd(std::chrono::steady_clock::time_point expiration);
+
+    void addTimerInLoop(const TimerCallback &cb, double seconds, bool repeat, TimerId id);
+    void cancelInLoop(TimerId id);
+    void refreshInLoop(TimerId id);
+
+    std::vector<TimerPtr> getExpired(std::chrono::steady_clock::time_point now);
+    void reset(const std::vector<TimerPtr> &expired, std::chrono::steady_clock::time_point now);
+
+private:
+    EventLoop *_loop;
+    int _timerfd;
+    std::unique_ptr<Channel> _timer_channel;
+    std::set<Entry> _entries;                     // 按到期时间排序的定时器索引
+    std::unordered_map<TimerId, TimerPtr> _timers; // id → 定时器对象
+
+    TimerId _next_id;               // 自动分配 id 计数器（从大值开始，避开连接 id 等显式 id）
+    bool _calling_expired;          // 是否正在执行到期回调（处理回调内 cancel 的重入）
+    std::unordered_set<TimerId> _canceling_timers; // 回调执行期间被 cancel 的 id 集合
 };
 
 #endif

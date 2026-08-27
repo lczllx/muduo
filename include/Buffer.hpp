@@ -40,7 +40,13 @@ public:
     std::string ReadAsstring(uint64_t len);//读取len数据并以string返回
     void ReadAndpop(void* buf, uint64_t len);//读取len数据并移动读偏移
     std::string ReadAsstringandpop(uint64_t len);//读取len数据并以string返回并移动读偏移
-    
+
+    // 网络字节序 int32 便捷方法（LV 协议等自定义协议解析用）
+    int32_t peekInt32();//窥视4字节并转主机序，不移动读偏移
+    int32_t readInt32();//读取4字节并转主机序，移动读偏移
+    void retrieveInt32();//跳过4字节（只移动读偏移）
+    std::string retrieveAsString(uint64_t len);//读取len字节为string并移动读偏移
+
     char* FindcrLf();//寻找换行字符
     std::string GetLine();//获取一行
     std::string GetLineAndPop();//获取一行并移动读偏移

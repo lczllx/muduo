@@ -28,7 +28,7 @@ static void HealthCheck(const HttpRequest&, HttpResponse* rsp) {
 
 int main()
 {
-    lcz::LoggerManager::getInstance().rootLogger()->setLevel(lcz::LogLevel::value::INFO);
+    dlmuduo::LoggerManager::getInstance().rootLogger()->setLevel(dlmuduo::LogLevel::value::INFO);
 
     const char* mysql_host = env("MYSQL_HOST", "127.0.0.1");
     int mysql_port = safe_stoi(env("MYSQL_PORT", "3306"), 3306);
@@ -39,20 +39,20 @@ int main()
 
     g_mysql.reset(new Mysql_Pool(mysql_host, mysql_user, mysql_pass, mysql_db, mysql_port, mysql_pool));
     if (!g_mysql->Init()) {
-        LCZ_ERROR("MySQL init failed");
+        DLMUDUO_ERROR("MySQL init failed");
         return 1;
     }
-    LCZ_INFO("MySQL init OK");
+    DLMUDUO_INFO("MySQL init OK");
 
     const char* redis_host = env("REDIS_HOST", "127.0.0.1");
     int redis_port = safe_stoi(env("REDIS_PORT", "6379"), 6379);
 
     g_redis.reset(new Redis_Client());
     if (!g_redis->Connect(redis_host, redis_port)) {
-        LCZ_ERROR("Redis connect failed");
+        DLMUDUO_ERROR("Redis connect failed");
         return 1;
     }
-    LCZ_INFO("Redis connect OK");
+    DLMUDUO_INFO("Redis connect OK");
 
     const char* base_url = std::getenv("BASE_URL");
     if (base_url && base_url[0]) g_base_url = base_url;
@@ -64,7 +64,7 @@ int main()
     server.Get("/health", HealthCheck);
     server.Post("/api/shorten", ApiShorten);
     server.Get("/([A-Za-z0-9]+)", Redirect);
-    LCZ_INFO("Short URL server starting on :%d", port);
+    DLMUDUO_INFO("Short URL server starting on :%d", port);
     server.Listen();
 
     return 0;

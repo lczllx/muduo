@@ -19,7 +19,7 @@
 #include "sink.hpp"
 #include "looper.hpp"
 
-namespace lcz
+namespace dlmuduo
 {
 
 // 日志器基类
@@ -42,7 +42,7 @@ public:
     }
 
     // 新增：运行时修改日志级别（线程安全）
-    void setLevel(lcz::LogLevel::value level) {
+    void setLevel(dlmuduo::LogLevel::value level) {
         _limit_level.store(level);
     }
 
@@ -248,9 +248,9 @@ public:
     {}
 
     void buildloggertype(LoggerType type) { _logger_type = type; }
-    void buildunsafeASYNC() { _looper_type = lcz::AsyncType::ASYNC_UNSAFE; }
+    void buildunsafeASYNC() { _looper_type = dlmuduo::AsyncType::ASYNC_UNSAFE; }
     void buildloggername(const std::string& loggername) { _logger_name = loggername; }
-    void buildloggerlevel(lcz::LogLevel::value level) { _level = level; }
+    void buildloggerlevel(dlmuduo::LogLevel::value level) { _level = level; }
     void buildloggerformatter(const std::string& pattern) { _formatter = std::make_shared<Formatter>(pattern); }
 
     template <typename Sinktype, typename... Args>
@@ -262,12 +262,12 @@ public:
     virtual Logger::ptr build() = 0;
 
 protected:
-    lcz::AsyncType _looper_type;
+    dlmuduo::AsyncType _looper_type;
     LoggerType _logger_type;
     std::string _logger_name;
-    lcz::LogLevel::value _level;
-    lcz::Formatter::ptr _formatter;
-    std::vector<lcz::LogSink::ptr> _sinks;
+    dlmuduo::LogLevel::value _level;
+    dlmuduo::Formatter::ptr _formatter;
+    std::vector<dlmuduo::LogSink::ptr> _sinks;
 };
 
 
@@ -382,7 +382,7 @@ public:
 private:
     LoggerManager()
     {
-        std::unique_ptr<lcz::LoggerBuilder> builder(new lcz::LocalLoggerBuilder());
+        std::unique_ptr<dlmuduo::LoggerBuilder> builder(new dlmuduo::LocalLoggerBuilder());
         builder->buildloggername("root_logger");
         _root_logger = builder->build();
         _loggers.insert(std::make_pair("root_logger", _root_logger));
@@ -418,4 +418,4 @@ public:
     }
 };
 
-} // namespace lcz
+} // namespace dlmuduo

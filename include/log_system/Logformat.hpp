@@ -15,7 +15,7 @@
 #include<cassert>
 #include<sstream>
 
-namespace lcz
+namespace dlmuduo
 { 
     //抽象格式化子项基类
       class FormatItem

@@ -21,6 +21,13 @@ public:
     LoopThread();
     ~LoopThread();
     EventLoop* Getloop();
+    // muduo::net::EventLoopThread::startLoop() 兼容接口：
+    // 返回该线程绑定的 EventLoop（阻塞直到就绪）。
+    // 注：LoopThread 构造即启动线程（非 muduo 的惰性 start），语义等价，仅启动时机更早。
+    EventLoop* startLoop() { return Getloop(); }
 };
+
+// 兼容 muduo::net::EventLoopThread 命名，迁移 lyqtRpc 等外部工程时可直接替换类型名
+using EventLoopThread = LoopThread;
 
 #endif

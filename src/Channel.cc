@@ -1,6 +1,6 @@
 #include "../include/Channel.hpp"
 #include "../include/EventLoop.hpp"
-#include "../include/Logger.hpp"
+#include "log_system/lcz_log.h"
 
 Channel::Channel(EventLoop *loop, int fd) 
     : _loop(loop), _fd(fd), _events(0), _revents(0) {}

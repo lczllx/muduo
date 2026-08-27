@@ -8,8 +8,9 @@ class Connection;
 class Buffer;
 
 using TaskFunc = std::function<void()>;
-using ReleaseFunc = std::function<void()>; 
+using ReleaseFunc = std::function<void()>;
 using PtrConnection = std::shared_ptr<Connection>;
+using TimerId = uint64_t;   // 定时器句柄，runAfter/runEvery 返回，cancel 消费
 
 // 连接状态机：CONNECTING → CONNECTED → DISCONNECTING → DISCONNECTED
 // 新连接创建时处于 CONNECTING，Establish() 后切换到 CONNECTED

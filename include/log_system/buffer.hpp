@@ -4,15 +4,15 @@
 #include<vector>
 #include "utility.hpp"
 
-namespace lcz
+namespace dlmuduo
 {
-    #define DEFAULT_BUFFER_SIZE (1*1024*1024)// 默认缓冲区大小 1MB
-    #define THRESHOLD_BUFFER_SIZE (3*1024*1024)// 缓冲区扩容阈值 3MB
-    #define INCREMENT_BUF_SIZE (1*1024*1024)// 超过阈值后每次扩容 1MB
+    #define DLMUDUO_DEFAULT_BUFFER_SIZE (1*1024*1024)// 默认缓冲区大小 1MB
+    #define DLMUDUO_THRESHOLD_BUFFER_SIZE (3*1024*1024)// 缓冲区扩容阈值 3MB
+    #define DLMUDUO_INCREMENT_BUF_SIZE (1*1024*1024)// 超过阈值后每次扩容 1MB
     class Buffer//线性缓冲区
     {
         public:
-        Buffer():_buf(DEFAULT_BUFFER_SIZE),_write_pos(0),_read_pos(0){}
+        Buffer():_buf(DLMUDUO_DEFAULT_BUFFER_SIZE),_write_pos(0),_read_pos(0){}
         //向缓冲区写入数据
         void push(const char* data,size_t len)
         {
@@ -89,12 +89,12 @@ namespace lcz
         {
             if(len<abletowritelen())return;
             size_t new_size=0;
-            if(_buf.size()<THRESHOLD_BUFFER_SIZE)
+            if(_buf.size()<DLMUDUO_THRESHOLD_BUFFER_SIZE)
             {
                 new_size=_buf.size()*2+len;
             }
             else{
-                new_size=_buf.size()+INCREMENT_BUF_SIZE+len;
+                new_size=_buf.size()+DLMUDUO_INCREMENT_BUF_SIZE+len;
             }
 
             _buf.resize(new_size);

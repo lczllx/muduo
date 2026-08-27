@@ -8,11 +8,11 @@ class EchoServer
     TcpServer _server;
     void OnConnected(const PtrConnection&conne)
     {
-        LCZ_DEBUG("new connected %p", conne.get());
+        DLMUDUO_DEBUG("new connected %p", conne.get());
     }
     void OnClosed(const PtrConnection&conne)
     {
-        LCZ_DEBUG("close connected %p", conne.get());
+        DLMUDUO_DEBUG("close connected %p", conne.get());
     }
     void OnMessage(const PtrConnection&conne,Buffer *buf)
     {

@@ -1,5 +1,6 @@
 #include "../include/Buffer.hpp"
-#include "../include/log_system/lcz_log.h"
+#include "log_system/lcz_log.h"
+#include <arpa/inet.h>
 
 Buffer::Buffer() : _read_idx(0), _write_idx(0), _buffer(BUFFER_DEFAULT_SIZE) {}
 
@@ -38,7 +39,7 @@ void Buffer::EnsureWritableBytes(uint64_t len)
     }
     else
     {
-        LCZ_DEBUG("RESIZE %lu", (_write_idx + len));
+        DLMUDUO_DEBUG("RESIZE %lu", (_write_idx + len));
         _buffer.resize(_write_idx + len);//空间不够就扩容
     }
 }
@@ -100,6 +101,33 @@ std::string Buffer::ReadAsstringandpop(uint64_t len)
     std::string str = ReadAsstring(len);
     MoveReadoffset(len);
     return str;
+}
+
+int32_t Buffer::peekInt32()
+{
+    assert(ReadableBytes() >= sizeof(int32_t));
+    int32_t be32 = 0;
+    std::memcpy(&be32, GetReadPtr(), sizeof(be32));
+    return ntohl(be32);
+}
+
+int32_t Buffer::readInt32()
+{
+    int32_t result = peekInt32();
+    MoveReadoffset(sizeof(int32_t));
+    return result;
+}
+
+void Buffer::retrieveInt32()
+{
+    MoveReadoffset(sizeof(int32_t));
+}
+
+std::string Buffer::retrieveAsString(uint64_t len)
+{
+    std::string result = ReadAsstring(len);
+    MoveReadoffset(len);
+    return result;
 }
 
 char *Buffer::FindcrLf() // 寻找换行字符

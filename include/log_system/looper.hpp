@@ -16,7 +16,7 @@
 #include "buffer.hpp"
 #include "Logger.hpp"
 
-namespace lcz
+namespace dlmuduo
 {
      enum class AsyncType//异步工作类型
     {
@@ -29,7 +29,7 @@ namespace lcz
     {
         public:
         using ptr = std::shared_ptr<AsyncLooper>;
-        AsyncLooper(const Functor &func,AsyncType type=lcz::AsyncType::ASYNC_SAFE):_callback(func),_looper_type(type),_stop(false),_thread(std::thread(&AsyncLooper::threadentry,this)){};
+        AsyncLooper(const Functor &func,AsyncType type=dlmuduo::AsyncType::ASYNC_SAFE):_callback(func),_looper_type(type),_stop(false),_thread(std::thread(&AsyncLooper::threadentry,this)){};
         ~AsyncLooper(){stop();}
         void push(const char*data,size_t len)
         {

@@ -10,19 +10,19 @@
 #include<thread>
 #include"utility.hpp"
 
-namespace lcz
+namespace dlmuduo
 {
     struct Logmsg
     {
         time_t _time; // 时间
-        lcz::LogLevel::value _level; // 日志等级
+        dlmuduo::LogLevel::value _level; // 日志等级
         std::string _file; // 文件名
         size_t _line; // 行号
         std::thread::id _tid; // 线程id
         std::string _logger; //日志器名称
         std::string _payload; // 日志内容   
         Logmsg(){}
-        Logmsg(lcz::LogLevel::value level,
+        Logmsg(dlmuduo::LogLevel::value level,
             const std::string &file,
             size_t line,
             const std::string &logger,
